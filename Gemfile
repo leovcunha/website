@@ -33,6 +33,7 @@ gem "bugsnag"
 gem 'aws-sdk-s3'
 gem 'image_processing', '~> 1.2'
 gem 'rest-client'
+gem 'rubyzip', require: false
 
 gem 'bootsnap', '>= 1.1.0', require: false
 
@@ -69,6 +70,7 @@ group :test do
   gem 'timecop'
   gem 'chromedriver-helper'
   gem 'webmock'
+  gem 'bullet'
 end
 
 group :development, :production do

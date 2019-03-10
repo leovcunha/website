@@ -35,6 +35,11 @@ Rails.application.routes.draw do
       resources :iterations, only: [:show]
     end
     resources :mentors, only: [:index]
+    namespace :data do
+      resources :tracks, only: [:index, :show] do
+        resources :exercises, only: [:show]
+      end
+    end
   end
 
   # ###### #
@@ -87,7 +92,11 @@ Rails.application.routes.draw do
   resources :profiles, only: [:index, :show] do
     get :solutions, on: :member
   end
-  resources :solutions, only: [:show]
+
+  resources :solutions, only: [:show] do
+    resources :comments, controller: "solution_comments", only: [:show, :create, :update, :destroy]
+  end
+
   resources :tracks, only: [:index, :show] do
     member do
       post :join
@@ -133,6 +142,7 @@ Rails.application.routes.draw do
         patch :request_mentoring
         patch :cancel_mentoring_request
         patch :reflect
+        patch :rate_mentors
         patch :publish
         patch :update_exercise
 
@@ -143,7 +153,7 @@ Rails.application.routes.draw do
 
       resources :iterations, only: [:show]
     end
-    resources :reactions, only: [:index, :create]
+    resources :starred_solutions, only: [:index, :create]
 
     resources :discussion_posts, only: [:create, :update, :destroy]
     resources :notifications, only: [:index] do
@@ -156,6 +166,7 @@ Rails.application.routes.draw do
     resource :settings do
       patch :reset_auth_token
       patch :cancel_unconfirmed_email
+      patch :set_default_allow_comments
 
       get :confirm_delete_account
       delete :delete_account
@@ -223,6 +234,17 @@ Rails.application.routes.draw do
     get :mentors
     get :contributors
   end
+
+  # #### #
+  # Blog #
+  # #### #
+  resources :blog_posts, only: [:index, :show], path: "blog"
+  resources :blog_comments, only: [:create, :update, :destroy]
+
+  # ############ #
+  # Unsubscribe  #
+  # ############ #
+  resource :unsubscribe, only: [:show, :update], controller: "unsubscribe"
 
   # ############ #
   # Weird things #

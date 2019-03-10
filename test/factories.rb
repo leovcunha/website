@@ -1,4 +1,36 @@
 FactoryBot.define do
+  factory :user_email_log do
+    user { create :user }
+  end
+  factory :solution_star do
+    solution { create :solution }
+    user { create :user }
+  end
+  factory :blog_comment do
+    blog_post { create :blog_post }
+    user { create :user }
+    content { "foobar" }
+    html { "<p>foobar</p>" }
+  end
+
+  factory :blog_post do
+    uuid { SecureRandom.uuid }
+    slug { "slug-#{SecureRandom.uuid}" }
+    category { "category-#{SecureRandom.uuid}" }
+    published_at { Time.current - 1.minute }
+    title { "Some blog post" }
+    author_handle { create(:user).handle }
+    content_repository { "blog" }
+    content_filepath { SecureRandom.uuid }
+  end
+
+  factory :solution_comment do
+    solution { create :solution }
+    user { create :user }
+      content { "Hello. World!" }
+      html { "<p>Hello. World!</p>" }
+  end
+
   factory :solution_lock do
     solution { create :solution }
     user { create :user }
@@ -50,13 +82,6 @@ FactoryBot.define do
     iteration { create :iteration }
     filename { "foobar-#{SecureRandom.uuid}.rb"}
     file_contents { "something = :else" }
-  end
-
-  factory :reaction do
-    solution { create :solution }
-    user { create :user }
-    emotion { :love }
-    comment { "The cat was all like and the mat and whatnot" }
   end
 
   factory :maintainer do
@@ -145,6 +170,10 @@ FactoryBot.define do
 
     factory :user_mentor do
       is_mentor { true }
+    end
+
+    factory :system_user do
+      id { User::SYSTEM_USER_ID }
     end
   end
 

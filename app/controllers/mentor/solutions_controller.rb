@@ -1,6 +1,7 @@
 class Mentor::SolutionsController < MentorController
   before_action :set_solution
-  before_action :check_mentor_may_mentor_solution!
+  before_action :check_mentor_may_view_solution!
+  before_action :check_mentor_may_mentor_solution!, except: [:show]
 
   def show
     if current_user == @solution.user
@@ -13,8 +14,7 @@ class Mentor::SolutionsController < MentorController
     @iteration = @solution.iterations.offset(params[:iteration_idx].to_i - 1).first if params[:iteration_idx].to_i > 0
     @iteration = @solution.iterations.last unless @iteration
 
-    @comments = @solution.reactions.with_comments.includes(user: [:profile, { avatar_attachment: :blob }])
-    @reaction_counts = @solution.reactions.group(:emotion).count.to_h
+    @comments = @solution.comments.includes(user: [:profile, { avatar_attachment: :blob }])
     @solution_user_track = UserTrack.where(user: @solution.user, track: @track).first
 
     @user_tracks = UserTrack.where(track: @track, user_id: @iteration.discussion_posts.map(&:user_id)).
@@ -26,6 +26,10 @@ class Mentor::SolutionsController < MentorController
 
     ClearNotifications.(current_user, @solution)
     ClearNotifications.(current_user, @iteration)
+
+    # Redact if a solution is approved or being mentored and you're not the mentor
+    @redact_users = (@solution.approved? || @solution.num_mentors > 0) &&
+                    !current_user.mentoring_solution?(@solution)
   end
 
   def approve
@@ -39,16 +43,18 @@ class Mentor::SolutionsController < MentorController
 
   def ignore_requires_action
     @mentor_solution = SolutionMentorship.where(user: current_user, solution: @solution).first
-    @mentor_solution.update(requires_action: false)
+    @mentor_solution.update(requires_action_since: nil)
     redirect_to mentor_dashboard_path
   end
 
   def abandon
-    @mentor_solution = SolutionMentorship.where(user: current_user, solution: @solution).first
-    if @mentor_solution.nil?
-      @mentor_solution = CreateSolutionMentorship.(@solution, current_user)
+    mentorship = SolutionMentorship.where(user: current_user, solution: @solution).first
+    if mentorship
+      AbandonSolutionMentorship.(mentorship, :left_conversation)
+    else
+      mentorship = CreateSolutionMentorship.(@solution, current_user)
+      AbandonSolutionMentorship.(mentorship, nil)
     end
-    AbandonMentoringSolution.(current_user, @solution)
 
     redirect_to [:mentor, :dashboard]
   end
@@ -68,9 +74,14 @@ class Mentor::SolutionsController < MentorController
     @solution = Solution.find_by_uuid!(params[:id])
   end
 
-  def check_mentor_may_mentor_solution!
-    return head 403 if current_user == @solution.user
+  def check_mentor_may_view_solution!
+    return redirect_to [:my, @solution] if current_user == @solution.user
+    return true if current_user.is_mentor?
 
+    head 403
+  end
+
+  def check_mentor_may_mentor_solution!
     return true if current_user.mentoring_solution?(@solution)
     return true if current_user.mentoring_track?(@solution.exercise.track)
 

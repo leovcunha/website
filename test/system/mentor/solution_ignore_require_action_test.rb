@@ -9,18 +9,18 @@ class SolutionIgnoreRequireActionTest < ApplicationSystemTestCase
     @solution = create :solution, exercise: create(:exercise, track: @track), mentoring_requested_at: Time.current
     @iteration = create :iteration, solution: @solution
 
-    solution_mentorship = create :solution_mentorship, solution: @solution, user: @mentor, requires_action: true
+    solution_mentorship = create :solution_mentorship, solution: @solution, user: @mentor, requires_action_since: Time.current
 
-    assert solution_mentorship.reload.requires_action
+    assert solution_mentorship.reload.requires_action?
 
     sign_in!(@mentor)
     visit mentor_solution_path(@solution)
 
     within ".tools-bar .notification" do
-      click_on "Ignore"
+      click_on "No action is required"
     end
 
-    assert_selector "body.namespace-mentor.controller-dashboard.action-show"
-    refute solution_mentorship.reload.requires_action
+    assert_selector "body.namespace-mentor.controller-dashboard.action-your_solutions"
+    refute solution_mentorship.reload.requires_action?
   end
 end

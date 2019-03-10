@@ -6,6 +6,7 @@ class My::SolutionDiscussionSectionTest < ApplicationSystemTestCase
   COMPLETE_TEXT = "Complete this solution."
   PUBLISH_TEXT = "Publish this solution."
   CANCEL_MENTORING_TEXT = "Don't want mentoring after all?"
+  CANCEL_MENTORING_BTN_TEXT = "Cancel mentoring request"
 
   setup do
     Git::ExercismRepo.stubs(current_head: "dummy-sha1")
@@ -47,6 +48,20 @@ class My::SolutionDiscussionSectionTest < ApplicationSystemTestCase
     refute_selector ".discussion"
   end
 
+  test "mentored mode / side-promoted-to-core solution" do
+    solution = create(:solution, user: @user, mentoring_requested_at: nil, exercise: create(:exercise, core: true), completed_at: Time.current)
+    create :iteration, solution: solution
+    create(:user_track, track: solution.track, user: @user)
+
+    visit my_solution_path(solution)
+
+    assert_selector ".finished-section .next-option strong", text: REQUEST_MENTORING_TEXT
+    assert_selector ".finished-section .next-option strong", text: PUBLISH_TEXT
+    refute_selector ".finished-section .next-option strong", text: COMPLETE_TEXT
+
+    refute_selector ".discussion"
+  end
+
   test "mentored mode / side solution with mentoring requested" do
     solution = create(:solution, user: @user, mentoring_requested_at: Time.current, exercise: create(:exercise, core: false))
     create :iteration, solution: solution
@@ -64,6 +79,8 @@ class My::SolutionDiscussionSectionTest < ApplicationSystemTestCase
     refute_selector ".finished-section .next-option strong", text: COMPLETE_TEXT
     refute_selector ".finished-section .next-option strong", text: PUBLISH_TEXT
     assert_selector ".finished-section .next-option strong", text: CANCEL_MENTORING_TEXT
+    assert_selector ".finished-section a", text: CANCEL_MENTORING_BTN_TEXT
+
   end
 
   test "mentored mode / side solution with mentoring requested and abaondoned mentor" do
@@ -84,6 +101,8 @@ class My::SolutionDiscussionSectionTest < ApplicationSystemTestCase
     refute_selector ".finished-section .next-option strong", text: COMPLETE_TEXT
     refute_selector ".finished-section .next-option strong", text: PUBLISH_TEXT
     assert_selector ".finished-section .next-option strong", text: CANCEL_MENTORING_TEXT
+    assert_selector ".finished-section a", text: CANCEL_MENTORING_BTN_TEXT
+
   end
 
   test "mentored mode / side solution with mentoring requested and non-mentor comment" do
@@ -103,6 +122,8 @@ class My::SolutionDiscussionSectionTest < ApplicationSystemTestCase
     refute_selector ".finished-section .next-option strong", text: COMPLETE_TEXT
     refute_selector ".finished-section .next-option strong", text: PUBLISH_TEXT
     assert_selector ".finished-section .next-option strong", text: CANCEL_MENTORING_TEXT
+    assert_selector ".finished-section a", text: CANCEL_MENTORING_BTN_TEXT
+
   end
 
   test "mentored section with auto approve" do
@@ -181,8 +202,8 @@ class My::SolutionDiscussionSectionTest < ApplicationSystemTestCase
     refute_selector ".discussion form"
   end
 
-  test "independent mode - requested mentoring" do
-    solution = create(:solution, user: @user, mentoring_requested_at: Time.current)
+  test "independent mode - core - requested mentoring" do
+    solution = create(:solution, user: @user, mentoring_requested_at: Time.current, exercise: create(:exercise, core: true))
     create :iteration, solution: solution
     create(:user_track, track: solution.track, user: @user, independent_mode: true)
 
@@ -190,7 +211,25 @@ class My::SolutionDiscussionSectionTest < ApplicationSystemTestCase
 
     assert_selector ".discussion h3", text: "Mentor discussion"
     assert_selector ".discussion form"
+
+    assert_selector ".finished-section .next-option strong", text: CANCEL_MENTORING_TEXT
+    assert_selector ".finished-section a", text: CANCEL_MENTORING_BTN_TEXT
   end
+
+  test "independent mode - side - requested mentoring" do
+    solution = create(:solution, user: @user, mentoring_requested_at: Time.current, exercise: create(:exercise, core: false))
+    create :iteration, solution: solution
+    create(:user_track, track: solution.track, user: @user, independent_mode: true)
+
+    visit my_solution_path(solution)
+
+    assert_selector ".discussion h3", text: "Mentor discussion"
+    assert_selector ".discussion form"
+
+    assert_selector ".finished-section .next-option strong", text: CANCEL_MENTORING_TEXT
+    assert_selector ".finished-section a", text: CANCEL_MENTORING_BTN_TEXT
+  end
+
 
   test "independent mode / not requested mentoring" do
     solution = create(:solution, user: @user, mentoring_requested_at: nil)
@@ -242,7 +281,7 @@ class My::SolutionDiscussionSectionTest < ApplicationSystemTestCase
     assert_selector ".markdown"
     refute_selector ".preview"
 
-    find(".new-discussion-post-form textarea").set("An example mentor comment to test the comment button!")
+    find(".new-editable-text textarea").set("An example mentor comment to test the comment button!")
     find(".preview-tab").click
     within(".preview-area") { assert_text "An example mentor comment to test the comment button!" }
     click_on "Comment"
@@ -260,16 +299,16 @@ class My::SolutionDiscussionSectionTest < ApplicationSystemTestCase
     assert_selector ".markdown"
     refute_selector ".preview"
 
-    assert_equal "", find(".new-discussion-post-form textarea").value
-    find(".new-discussion-post-form textarea").set("An example mentor comment to test the comment button!")
+    assert_equal "", find(".new-editable-text textarea").value
+    find(".new-editable-text textarea").set("An example mentor comment to test the comment button!")
 
     visit my_solution_path(solution)
 
-    assert_equal "An example mentor comment to test the comment button!", find(".new-discussion-post-form textarea").value
-    find(".new-discussion-post-form textarea").set("")
+    assert_equal "An example mentor comment to test the comment button!", find(".new-editable-text textarea").value
+    find(".new-editable-text textarea").set("")
 
     visit my_solution_path(solution)
 
-    assert_equal "", find(".new-discussion-post-form textarea").value
+    assert_equal "", find(".new-editable-text textarea").value
   end
 end

@@ -25,7 +25,7 @@ body.controller-pages.action-index footer {
             }
             h1 {
                 @include header-font;
-                font-weight:500;
+                font-weight:$bold;
                 @include font-size(30,24);
                 color:$color-2;
                 margin-bottom:10px;
@@ -175,7 +175,7 @@ body.controller-pages.action-index footer {
                     }
                     .title {
                         @include font-size(14, 101);
-                        font-weight:400;
+                        font-weight:$regular;
                         text-align:center;
                         display:none;
                         color:#fff;
@@ -378,7 +378,7 @@ body.controller-pages.action-index footer {
                 text-align:center;
             }
             @include font-size(17, 17);
-            font-weight:$light;
+            font-weight:$fw-regular;
             margin-bottom:20px;
         }
         .pure-button {

@@ -8,4 +8,22 @@ class NewsletterMailer < ApplicationMailer
     @user = params[:user]
     mail(to: "#{@user.name} <#{@user.email}>", subject: "[Exercism] View your Mentor Rating")
   end
+
+  def mentor_thanks_2018
+    @user = params[:user]
+    mail(
+      to: "#{@user.name} <#{@user.email}>",
+      reply_to: "jeremy@exercism.io",
+      subject: "[Exercism] Thanks for being a mentor this year"
+    )
+  end
+
+  def mentor_jan_2019
+    @user = params[:user]
+    mail(
+      to: "#{@user.name} <#{@user.email}>",
+      reply_to: "jeremy@exercism.io",
+      subject: "[Exercism] We've improved lots during January"
+    )
+  end
 end

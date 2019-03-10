@@ -135,6 +135,9 @@ class UserTest < ActiveSupport::TestCase
     assert user.may_unlock_exercise?(side_exercise_without_unlock)
 
     user_track.update(independent_mode: true)
+
+    # Reset user to empty caches
+    user = User.find(user.id)
     assert user.may_unlock_exercise?(core_exercise)
     assert user.may_unlock_exercise?(side_exercise_with_unlock)
     assert user.may_unlock_exercise?(side_exercise_without_unlock)
@@ -166,10 +169,16 @@ class UserTest < ActiveSupport::TestCase
     solution = create(:solution, user: user)
     iteration = create(:iteration, solution: solution)
     learner_post = create(:discussion_post, iteration: iteration, user: user)
+    blog_comment = create(:blog_comment, user: user)
+    solution_comment = create(:solution_comment, user: user)
+    solution_star = create(:solution_star, user: user)
 
     user.destroy
 
     refute DiscussionPost.exists?(learner_post.id)
+    refute BlogComment.exists?(blog_comment.id)
+    refute SolutionComment.exists?(solution_comment.id)
+    refute SolutionStar.exists?(solution_star.id)
     mentor_post.reload
     refute mentor_post.destroyed?
     assert_nil mentor_post.user
@@ -251,7 +260,15 @@ class UserTest < ActiveSupport::TestCase
     assert_equal 2, user.num_rated_mentored_solutions
   end
 
-  test "mentor_rating" do
+  test "User#system_user" do
+    other_user = create :user, id: 5
+    system_user = create :user, id: User::SYSTEM_USER_ID
+
+    assert_equal system_user, User.system_user
+  end
+
+
+  test "trimmed mentor_rating when 5% is under 0.5" do
     user = create :user
     assert_equal 0, user.mentor_rating
 
@@ -262,5 +279,51 @@ class UserTest < ActiveSupport::TestCase
 
     user = User.find(user.id) # Clear the cache
     assert_equal 3.67, user.mentor_rating
+  end
+
+  test "trimmed mentor_rating with 20 solution memberships" do
+    user = create :user
+    assert_equal 0, user.mentor_rating
+
+    2.times do
+      create :solution_mentorship, user: user, rating: 1
+    end
+
+    5.times do
+      create :solution_mentorship, user: user, rating: 2
+    end
+
+    create :solution_mentorship, user: user, rating: 3
+
+    5.times do
+      create :solution_mentorship, user: user, rating: 4
+    end
+
+    7.times do
+      create :solution_mentorship, user: user, rating: 5
+    end
+
+    create :solution_mentorship, user: user, rating: nil
+
+    user = User.find(user.id) # Clear the cache
+    assert_equal 3.63, user.mentor_rating
+  end
+
+  test "trimmed mentor rating when no ratings are present" do
+    user = create :user
+    assert_equal 0, user.mentor_rating
+
+    user = User.find(user.id) # Clear the cache
+    assert_equal 0.0, user.mentor_rating
+  end
+
+  test "starred_solution?" do
+    user = create :user
+    solution = create :solution
+
+    refute user.starred_solution?(solution)
+
+    create :solution_star, user: user, solution: solution
+    assert user.reload.starred_solution?(solution)
   end
 end

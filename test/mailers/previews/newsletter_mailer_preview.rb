@@ -7,4 +7,13 @@ class NewsletterMailerPreview < ActionMailer::Preview
    def mentor_changes_1
     NewsletterMailer.with(user: User.first).mentor_changes_1
   end
+
+   def mentor_thanks_2018
+    NewsletterMailer.with(user: User.first).mentor_thanks_2018
+  end
+
+   def mentor_jan_2019
+    NewsletterMailer.with(user: User.first).mentor_jan_2019
+  end
+
 end

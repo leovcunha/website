@@ -3,7 +3,7 @@ class Solution < ApplicationRecord
 
   belongs_to :approved_by, class_name: "User", optional: true
 
-  has_many :iterations, dependent: :destroy
+  has_many :iterations, dependent: :destroy, as: :solution
   has_many :discussion_posts, through: :iterations
 
   has_many :mentorships, class_name: "SolutionMentorship", dependent: :destroy
@@ -11,7 +11,8 @@ class Solution < ApplicationRecord
   has_many :solution_locks, dependent: :destroy
   has_many :mentors, through: :mentorships, source: :user
 
-  has_many :reactions, dependent: :destroy
+  has_many :stars, class_name: "SolutionStar", dependent: :destroy
+  has_many :comments, class_name: "SolutionComment", dependent: :destroy
 
   delegate :auto_approve?, to: :exercise
 

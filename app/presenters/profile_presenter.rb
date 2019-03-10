@@ -43,22 +43,6 @@ class ProfilePresenter
       unshift(["Any", 0])
   end
 
-  memoize
-  def reaction_counts
-    Reaction.where(solution_id: solutions).
-             group(:solution_id, :emotion).
-             count
-  end
-
-  memoize
-  def comment_counts
-    Reaction.
-      where(solution_id: solutions).
-      with_comments.
-      group(:solution_id).
-      count
-  end
-
   private
 
   delegate :user, to: :profile

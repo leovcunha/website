@@ -74,35 +74,38 @@
             }
         }
         .notification {
-            padding:5px;
             color:#fff;
-            font-weight:400;
-            a {
-                font-weight:400;
+            font-weight:$regular;
+            vertical-align:middle;
+            .ignore {
+                font-weight:$regular;
                 color:#fff;
                 text-decoration:underline;
+                background: #fff;
+                padding: 6px 10px;
+                color: $color-1;
+                text-decoration: none;
+                vertical-align: baseline;
+                margin-left: 5px;
             }
         }
     }
     .discussion,
-    .new-discussion-post {
+    .new-editable-text {
         h3 {
             padding:7px 0;
             border-bottom:1px solid #ddd;
             margin-bottom:20px;
 
-            font-weight:400;
+            font-weight:$regular;
             color:#333;
         }
-        .pane.markdown,
-        .pane.preview {
-            padding:0;
-        }
+
         .posts {
             //margin-bottom:40px;
         }
     }
-    .new-discussion-post {
+    .new-editable-text {
         .approved {
             color:$color-1;
             padding-top:17px;
@@ -147,12 +150,12 @@
         clear:both;
         padding-top:15px;
         h3 {
-            font-weight:400;
+            font-weight:$regular;
             color:#333;
             padding:7px 0;
             border-bottom:1px solid #ddd;
             margin-bottom:10px;
-        } 
+        }
         p {
             margin-bottom:10px;
             @include font-size(14, 19);
@@ -169,7 +172,7 @@
             p {
                 strong {
                     color:red;
-                    font-weight:400;
+                    font-weight:$regular;
                 }
             }
 
@@ -190,12 +193,12 @@
         clear:both;
         padding-top:15px;
         h3 {
-            font-weight:400;
+            font-weight:$regular;
             color:#333;
             padding:7px 0;
             border-bottom:1px solid #ddd;
             margin-bottom:10px;
-        } 
+        }
         p {
             margin-bottom:10px;
             @include font-size(14, 19);

@@ -8,7 +8,7 @@ module MetadataHelper
   end
 
   def metadata_image_url
-    @metadata_image_url ||= metadata.try(:fetch, :image_url, nil) || image_url("icon.png")
+    @metadata_image_url ||= metadata.try(:fetch, :image_url, nil) || "https://assets.exercism.io/social/general.png"
   end
 
   def metadata_url
@@ -33,8 +33,8 @@ module MetadataHelper
           { title: "Notifications" }
         when "settings", "track_settings", "preferences"
           { title: "Settings" }
-        when "reactions"
-          { title: "My Reactions" }
+        when "starred_solutions"
+          { title: "Starred solutions" }
         when "solutions"
           case action_name
           when "index"
@@ -55,17 +55,49 @@ module MetadataHelper
         when "registrations"
           { title: "Become a mentor" }
         when "solutions"
-          { title: "#{display_handle(@solution.user, @solution_user_track)} | #{@track.title}/#{@exercise.title}" }
+          handle = @redact_users ? "[Redacted]" : display_handle(@solution.user, @solution_user_track)
+          {
+            title: "#{handle} | #{@track.title}/#{@exercise.title}"
+          }
         else
           { title: "Mentor Dashboard" }
         end
       else
         case controller_name
+        when "blog_posts"
+          case action_name
+          when 'index'
+            {
+              title: "The Exercism Blog",
+              description: "News, interviews and articles from the Exercism community.",
+              image_url: "https://assets.exercism.io/social/blog.png"
+            }
+          else
+            {
+              title: @blog_post.title,
+              description: blog_post_summary(@blog_post),
+              image_url: @blog_post.image_url.presence || "https://assets.exercism.io/social/blog.png"
+            }
+          end
         when "pages"
           case action_name
           when :index
           else
             { title: @page_title }
+          end
+        when "solutions"
+          case action_name
+          when "show"
+            return {} unless @solution
+
+            exercise = @solution.exercise
+            track = exercise.track
+            handle = @solution.user.handle_for(track)
+            {
+              title: "#{handle}'s solution to #{exercise.title} on the #{track.title} track",
+              description: "See how #{handle} solved the #{exercise.title} exercise on the #{track.title} track",
+              image_url: track.bordered_turquoise_icon_url
+            }
           end
         when "tracks"
           case action_name

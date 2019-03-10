@@ -1,5 +1,6 @@
 class User < ApplicationRecord
   DEFAULT_AVATAR = "anonymous.png"
+  SYSTEM_USER_ID = 1
 
   # Remove this so devise can't use it.
   def self.validates_uniqueness_of(*args)
@@ -43,9 +44,10 @@ class User < ApplicationRecord
   has_many :ignored_solution_mentorships, dependent: :destroy
   has_many :ignored_solutions, through: :ignored_solution_mentorships, source: :solution
 
-  has_many :reactions, dependent: :destroy
-
   has_many :discussion_posts, dependent: :nullify
+  has_many :solution_comments, dependent: :destroy # TODO - set deleted status instead
+  has_many :blog_comments, dependent: :destroy
+  has_many :solution_stars, dependent: :destroy
 
   has_one_attached :avatar
 
@@ -61,6 +63,10 @@ class User < ApplicationRecord
         user.handle = data["info"]["nickname"] if user.handle.blank?
       end
     end
+  end
+
+  def User.system_user
+    User.find(SYSTEM_USER_ID)
   end
 
   after_create do
@@ -126,6 +132,11 @@ class User < ApplicationRecord
     user_tracks.where(track_id: track.id).first
   end
 
+  def handle_for(track)
+    ut = user_track_for(track)
+    (ut && ut.anonymous?) ? ut.handle : handle
+  end
+
   def may_unlock_exercise?(exercise, user_track: user_track_for(exercise.track))
     # If one of:
     # - we're in indepdenent mode
@@ -153,10 +164,16 @@ class User < ApplicationRecord
   end
 
   def mentor_rating
-   @mentor_rating ||=
-      solution_mentorships.where.not(rating: nil).
-                           pluck(Arel.sql("AVG(rating) as r")).
-                           first.to_f.round(2)
+    @mentor_rating ||= begin
+      rating_arr = solution_mentorships.where.not(rating: nil).order(:rating).pluck(:rating)
+      if rating_arr.empty?
+        0.0
+      else
+        five_percent = (rating_arr.length * 0.05).round
+        rating_arr.shift(five_percent)
+        (rating_arr.sum.to_f / rating_arr.length).round(2)
+      end
+    end
   end
 
   def has_active_lock_for_solution?(solution)
@@ -173,6 +190,10 @@ class User < ApplicationRecord
 
   def send_devise_notification(notification, *args)
     devise_mailer.send(notification, self, *args).deliver_later
+  end
+
+  def starred_solution?(solution)
+    solution_stars.where(solution: solution).exists?
   end
 
   private

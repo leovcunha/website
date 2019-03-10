@@ -16,29 +16,27 @@ class FiltersSolutionsByStatus
       else
         filter_require_action
       end
-    solutions.includes(iterations: [], exercise: {track: []}, user: [:profile]).
-              limit(20) # TODO - Paginate
+    solutions.includes(iterations: [], exercise: {track: []}, user: [:profile])
   end
 
   def filter_require_action
     solutions.
-      where("solution_mentorships.abandoned": false).
-      where("solution_mentorships.requires_action": true).
-      where("solutions.paused": false)
+      where("solutions.paused": false).
+      merge( SolutionMentorship.active.requires_action )
   end
 
   def filter_completed
     solutions.
-      where("solution_mentorships.abandoned": false).
       completed.
-      where("solution_mentorships.requires_action": false)
+      where("solution_mentorships.abandoned": false).
+      where("solution_mentorships.requires_action_since": nil)
   end
 
   def filter_awaiting_user
     solutions.
       where("solution_mentorships.abandoned": false).
       not_completed.
-      where("solution_mentorships.requires_action": false).
+      where("solution_mentorships.requires_action_since": nil).
       where("last_updated_by_user_at > ?", Time.current - 7.days).
       where("solutions.paused": false)
   end
@@ -47,7 +45,7 @@ class FiltersSolutionsByStatus
     solutions.
       where("solution_mentorships.abandoned": false).
       not_completed.
-      where("solution_mentorships.requires_action": false).
+      where("solution_mentorships.requires_action_since": nil).
       where("last_updated_by_user_at <= ?", Time.current - 7.days).
       where("last_updated_by_user_at > ?", Exercism::V2_MIGRATED_AT).
       where("solutions.paused": false)
@@ -57,7 +55,7 @@ class FiltersSolutionsByStatus
     solutions.
       where("solution_mentorships.abandoned": false).
       not_completed.
-      where("solution_mentorships.requires_action": false).
+      where("solution_mentorships.requires_action_since": nil).
       where("last_updated_by_user_at <= ?", Exercism::V2_MIGRATED_AT)
   end
 

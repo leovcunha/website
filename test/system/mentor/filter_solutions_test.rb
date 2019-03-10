@@ -9,12 +9,12 @@ class FilterSolutionsTest < ApplicationSystemTestCase
                     mentored_tracks: [track])
 
     sign_in!(mentor)
-    visit mentor_dashboard_path
+    visit your_solutions_mentor_dashboard_path
     refute_selector ".your-solutions"
 
     solution = create :solution, exercise: create(:exercise, track: track)
-    create :solution_mentorship, user: mentor, requires_action: true, solution: solution
-    visit mentor_dashboard_path
+    create :solution_mentorship, user: mentor, requires_action_since: Time.current, solution: solution
+    visit your_solutions_mentor_dashboard_path
     assert_selector ".your-solutions"
   end
 
@@ -33,10 +33,10 @@ class FilterSolutionsTest < ApplicationSystemTestCase
            user: mentor,
            solution: solution,
            abandoned: false,
-           requires_action: false)
+           requires_action_since: nil)
 
     sign_in!(mentor)
-    visit mentor_dashboard_path
+    visit your_solutions_mentor_dashboard_path
     select_option "Completed", selector: "#your_status"
 
     assert page.has_link?(href: mentor_solution_path(solution))
@@ -60,15 +60,15 @@ class FilterSolutionsTest < ApplicationSystemTestCase
            user: mentor,
            solution: action_required_solution,
            abandoned: false,
-           requires_action: true)
+           requires_action_since: Time.current)
     create(:solution_mentorship,
            user: mentor,
            solution: completed_solution,
            abandoned: false,
-           requires_action: false)
+           requires_action_since: nil)
 
     sign_in!(mentor)
-    visit mentor_dashboard_path
+    visit your_solutions_mentor_dashboard_path
 
     assert page.has_link?(href: mentor_solution_path(action_required_solution))
     assert page.has_no_link?(href: mentor_solution_path(completed_solution))
@@ -89,15 +89,15 @@ class FilterSolutionsTest < ApplicationSystemTestCase
     create(:solution_mentorship,
            user: mentor,
            solution: solution_ruby,
-           requires_action: true)
+           requires_action_since: Time.current)
     create(:iteration, solution: solution_cpp)
     create(:solution_mentorship,
            user: mentor,
            solution: solution_cpp,
-           requires_action: true)
+           requires_action_since: Time.current)
 
     sign_in!(mentor)
-    visit mentor_dashboard_path
+    visit your_solutions_mentor_dashboard_path
     select_option "Ruby", selector: "#your_track_id"
 
     assert page.has_link?(href: mentor_solution_path(solution_ruby))
@@ -118,16 +118,16 @@ class FilterSolutionsTest < ApplicationSystemTestCase
     create(:solution_mentorship,
            user: mentor,
            solution: hello_world_solution,
-           requires_action: true)
+           requires_action_since: Time.current)
     sorting_solution = create(:solution, exercise: sorting)
     create(:iteration, solution: sorting_solution)
     create(:solution_mentorship,
            user: mentor,
            solution: sorting_solution,
-           requires_action: true)
+           requires_action_since: Time.current)
 
     sign_in!(mentor)
-    visit mentor_dashboard_path
+    visit your_solutions_mentor_dashboard_path
     select_option "Ruby", selector: "#your_track_id"
     select_option "Sorting", selector: "#your_exercise_id"
 
@@ -135,32 +135,29 @@ class FilterSolutionsTest < ApplicationSystemTestCase
     assert page.has_no_link?(href: mentor_solution_path(hello_world_solution))
   end
 
-  test "autoselects your/next solutions when mentor has one track" do
+  test "autoselects your solutions when mentor has one track" do
     track = create(:track)
     mentor = create(:user_mentor,
                     accepted_terms_at: Date.new(2016, 12, 25),
                     accepted_privacy_policy_at: Date.new(2016, 12, 25),
                     mentored_tracks: [track])
     exercise1 = create(:exercise, title: "Exercise 1", track: track)
-    exercise2 = create(:exercise, title: "Exercise 2", track: track) 
+    exercise2 = create(:exercise, title: "Exercise 2", track: track)
     solution1 = create(:solution, exercise: exercise1, mentoring_requested_at: Time.current)
     solution2 = create(:solution, exercise: exercise2, mentoring_requested_at: Time.current)
     create(:iteration, solution: solution1)
     create(:solution_mentorship,
            user: mentor,
            solution: solution1,
-           requires_action: true)
+           requires_action_since: Time.current)
 
     create(:iteration, solution: solution2)
 
     sign_in!(mentor)
-    visit mentor_dashboard_path
+    visit your_solutions_mentor_dashboard_path
 
     your_track_id = find("#your_track_id + .selectize-control .item")["data-value"]
-    next_track_id = find("#next_track_id + .selectize-control .item")["data-value"]
     assert_equal your_track_id, track.id.to_s
-    assert_equal next_track_id, track.id.to_s
     assert has_selector? '.your-solutions'
-    assert has_selector? '.next-solutions'
   end
 end
